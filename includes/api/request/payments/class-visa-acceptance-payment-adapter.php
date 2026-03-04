@@ -258,9 +258,27 @@ class Visa_Acceptance_Payment_Adapter extends Visa_Acceptance_Request {
 	 * @return array
 	 */
 	public function client_reference_information( $order ) {
+
+		$payment_reference = '';
+		if ( is_numeric( $order ) ) {
+			$order = wc_get_order( $order );
+		}
+		if ( $order instanceof \WC_Order ) {
+			if ( handle_hpos_compatibility() ) {
+				$payment_reference = $order->get_meta( 'payment_reference', true );
+			} else {
+				$payment_reference = get_post_meta( $order->get_id(), 'payment_reference', true );
+			}
+		}
+		if ( ! empty( $payment_reference ) ) {
+			$code = $payment_reference;
+		} else {
+			$code = $order->get_id();
+		}
+
 		$client_reference_information = new \CyberSource\Model\Ptsv2paymentsClientReferenceInformation(
 			array(
-				'code'               => $order->get_id(),
+				'code'               => $code,
 				'partner'            => $this->client_reference_information_partner(),
 				'applicationName'    => VISA_ACCEPTANCE_PLUGIN_APPLICATION_NAME . VISA_ACCEPTANCE_SPACE . VISA_ACCEPTANCE_PLUGIN_API_TYPE,
 				'applicationVersion' => VISA_ACCEPTANCE_PLUGIN_VERSION,
